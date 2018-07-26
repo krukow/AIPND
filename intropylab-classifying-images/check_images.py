@@ -42,7 +42,9 @@
 
 import argparse
 from time import time, sleep, strftime, gmtime
-from os import listdir
+from os import listdir, extsep
+from os.path import join
+
 
 # Imports classifier function for using CNN to classify images 
 from classifier import classifier 
@@ -54,18 +56,16 @@ from print_functions_for_lab_checks import *
 def main():
     # collecting start time
     start_time = time()
-    
-    # TODO: 2. Define get_input_args() function to create & retrieve command
+
     # line arguments
     in_arg = get_input_args()
     
-    # TODO: 3. Define get_pet_labels() function to create pet image labels by
     # creating a dictionary with key=filename and value=file label to be used
     # to check the accuracy of the classifier function
-    answers_dic = get_pet_labels()
+    answers_dic = get_pet_labels(in_arg.dir)
 
     # TODO: 4. Define classify_images() function to create the classifier 
-    # labels with the classifier function uisng in_arg.arch, comparing the 
+    # labels with the classifier function using in_arg.arch, comparing the
     # labels, and creating a dictionary of results (result_dic)
     result_dic = classify_images()
     
@@ -115,10 +115,28 @@ def get_input_args():
     Returns:
      parse_args() -data structure that stores the command line arguments object  
     """
-    pass
+    parser = argparse.ArgumentParser(description="""
+        Check images & report results: read them in, predict their
+        content (classifier), compare prediction to actual value labels
+        and output results
+""")
+    parser.add_argument('--dir',
+                        default='pet_images/',
+                        help='Path to the pet image files(default- pet_images/)')
+
+    parser.add_argument('--arch',
+                        default='vgg',
+                        help="CNN model architecture to use for image classification(default- vgg)",
+                        choices=['vgg', 'alexnet', 'resnet'])
+
+    parser.add_argument('--dogfile',
+                        default='dognames.txt',
+                        help="Text file that contains all labels associated to dogs(default- 'dognames.txt')")
+
+    return parser.parse_args()
 
 
-def get_pet_labels():
+def get_pet_labels(image_dir):
     """
     Creates a dictionary of pet labels based upon the filenames of the image 
     files. Reads in pet filenames and extracts the pet image labels from the 
@@ -131,7 +149,13 @@ def get_pet_labels():
      petlabels_dic - Dictionary storing image filename (as key) and Pet Image
                      Labels (as value)  
     """
-    pass
+
+    def to_labels(name):
+        return ' '.join(filter(lambda x: x.isalpha(), name.lower().split("_")))
+
+    return dict(map(lambda f: (join(image_dir,f),
+                               to_labels(f.split(extsep)[0])),
+                    listdir(image_dir)))
 
 
 def classify_images():
