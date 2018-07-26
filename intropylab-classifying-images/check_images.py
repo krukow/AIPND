@@ -73,14 +73,12 @@ def main():
     # correctly classify dog images as dogs (regardless of breed)
     adjust_results4_isadog(result_dic, in_arg.dogfile)
 
-    # TODO: 6. Define calculates_results_stats() function to calculate
     # results of run and puts statistics in a results statistics
     # dictionary (results_stats_dic)
-    results_stats_dic = calculates_results_stats()
+    results_stats_dic = calculates_results_stats(result_dic)
 
-    # TODO: 7. Define print_results() function to print summary results, 
     # incorrect classifications of dogs and breeds if requested.
-    print_results()
+    print_results(result_dic, results_stats_dic, in_arg.arch, True, True)
 
     # by collecting end time
     end_time = time()
@@ -181,6 +179,9 @@ def classify_images(images_dir, petlabel_dic, model):
                     idx 2 = 1/0 (int)   where 1 = match between pet image and 
                     classifer labels and 0 = no match between labels
     """
+
+    # note decided to not use images_dir but instead iterate over dict keys
+
     def match(label, classified_labels):
         terms = classified_labels.strip().lower().split(',')
         for term in terms:
@@ -246,12 +247,7 @@ def adjust_results4_isadog(results_dic, dogsfile):
             res.append(1)
 
 
-
-
-
-
-
-def calculates_results_stats():
+def calculates_results_stats(results_dic):
     """
     Calculates statistics of the results of the run using classifier's model 
     architecture on classifying images. Then puts the results statistics in a 
@@ -275,10 +271,53 @@ def calculates_results_stats():
                      name (starting with 'pct' for percentage or 'n' for count)
                      and the value is the statistic's value 
     """
-    pass
+    results_stats = dict()
+    n_images = len(results_dic)
+    n_dogs = 0
+    n_dogs_classified = 0
+    n_non_dogs_classified = 0
+    n_correct_breed = 0
+    n_label_matches = 0
+    for _, res in results_dic.items():
+        is_dog = res[3] == 1
+        agree = res[3] == res[4]
+        label_match = res[2] == 1
+        if is_dog:
+            n_dogs += 1
+            if agree: n_dogs_classified += 1
+            if label_match: n_correct_breed += 1
+        else:
+            if agree: n_non_dogs_classified += 1
+
+        if label_match:
+            n_label_matches += 1
+
+    results_stats['n_images'] = n_images
+    results_stats['n_dogs'] = n_dogs
+    results_stats['n_dogs_classified'] = n_dogs_classified
+    results_stats['n_non_dogs_classified'] = n_non_dogs_classified
+    results_stats['n_correct_breed'] = n_correct_breed
+    results_stats['n_label_matches'] = n_label_matches
+
+    if n_dogs > 0:
+        results_stats['pct_correct_dogs'] = (float(n_dogs_classified) / n_dogs) * 100
+    else:
+        results_stats['pct_correct_dogs'] = 0.0
+
+    if n_images == n_dogs:
+        results_stats['pct_correct_non_dogs'] = 0.0
+    else:
+        results_stats['pct_correct_non_dogs'] = float(n_non_dogs_classified) / (n_images - n_dogs) * 100
+
+    results_stats['pct_correct_breed'] = float(n_correct_breed) / n_dogs
+
+    results_stats['pct_label_matches'] = float(n_label_matches) / n_images
+
+    return results_stats
 
 
-def print_results():
+
+def print_results(results_dic, results_stats, model, print_incorrect_dogs, print_incorrect_breed):
     """
     Prints summary results on the classification and then prints incorrectly 
     classified dogs and incorrectly classified dog breeds if user indicates 
@@ -307,7 +346,30 @@ def print_results():
     Returns:
            None - simply printing results.
     """    
-    pass
+    print("CNN model architecture: " + model)
+
+    non_dogs = results_stats['n_images'] - results_stats['n_dogs']
+    print("Number of images: " + str(results_stats['n_images']))
+    print("Number of dogs: " + str(results_stats['n_dogs']))
+    print("Number of non-dogs: " + str(non_dogs))
+
+    for k,v in results_stats.items():
+        if k.startswith('pct_'):
+            print(k + ": " + str(v))
+
+    if not (print_incorrect_dogs or print_incorrect_breed): return
+
+    made_mistakes = (results_stats['n_dogs'] != results_stats['n_dogs_classified'] or non_dogs != results_stats['n_non_dogs_classified'])
+    if made_mistakes: print("Mistakes where made!")
+    if made_mistakes:
+        for k, res in results_dic.items():
+            is_dog = res[3] == 1
+            agree = res[3] == res[4]
+            label_match = res[2] == 1
+            if not agree and print_incorrect_dogs:
+                print("Incorrect! {} is {}. Full data: {}.".format(k, "dog" if is_dog else "not a dog!", res))
+            if agree and not label_match and print_incorrect_breed:
+                print("Incorrect breed! {} is {} not {}. Full data: {}.".format(k, res[0], res[1], res))
 
                 
                 
