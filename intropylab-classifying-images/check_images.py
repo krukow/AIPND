@@ -68,11 +68,10 @@ def main():
     # labels, and creating a dictionary of results (result_dic)
     result_dic = classify_images(in_arg.dir, answers_dic, in_arg.arch)
 
-    # TODO: 5. Define adjust_results4_isadog() function to adjust the results
     # dictionary(result_dic) to determine if classifier correctly classified
     # images as 'a dog' or 'not a dog'. This demonstrates if the model can
     # correctly classify dog images as dogs (regardless of breed)
-    adjust_results4_isadog()
+    adjust_results4_isadog(result_dic, in_arg.dogfile)
 
     # TODO: 6. Define calculates_results_stats() function to calculate
     # results of run and puts statistics in a results statistics
@@ -198,7 +197,7 @@ def classify_images(images_dir, petlabel_dic, model):
     return results_dic
 
 
-def adjust_results4_isadog():
+def adjust_results4_isadog(results_dic, dogsfile):
     """
     Adjusts the results dictionary to determine if classifier correctly 
     classified images 'as a dog' or 'not a dog' especially when not a match. 
@@ -225,8 +224,31 @@ def adjust_results4_isadog():
                 text file's name)
     Returns:
            None - results_dic is mutable data type so no return needed.
-    """           
-    pass
+    """
+    all_dogs = set()
+    with open(dogsfile) as f:
+        name_lines = list(f)
+        for name_line in name_lines:
+            names = name_line.strip().split(',')
+            all_dogs.update(names)
+
+    for _, res in results_dic.items():
+        label = res[0]
+        classified = set(res[1].lower().split(','))
+        if label in all_dogs:
+            res.append(1)
+        else:
+            res.append(0)
+
+        if all_dogs.isdisjoint(classified):
+            res.append(0)
+        else:
+            res.append(1)
+
+
+
+
+
 
 
 def calculates_results_stats():
