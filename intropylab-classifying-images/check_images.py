@@ -64,11 +64,10 @@ def main():
     # to check the accuracy of the classifier function
     answers_dic = get_pet_labels(in_arg.dir)
 
-    # TODO: 4. Define classify_images() function to create the classifier 
     # labels with the classifier function using in_arg.arch, comparing the
     # labels, and creating a dictionary of results (result_dic)
-    result_dic = classify_images()
-    
+    result_dic = classify_images(in_arg.dir, answers_dic, in_arg.arch)
+
     # TODO: 5. Define adjust_results4_isadog() function to adjust the results
     # dictionary(result_dic) to determine if classifier correctly classified
     # images as 'a dog' or 'not a dog'. This demonstrates if the model can
@@ -158,7 +157,7 @@ def get_pet_labels(image_dir):
                     listdir(image_dir)))
 
 
-def classify_images():
+def classify_images(images_dir, petlabel_dic, model):
     """
     Creates classifier labels with classifier function, compares labels, and 
     creates a dictionary containing both labels and comparison of them to be
@@ -183,7 +182,20 @@ def classify_images():
                     idx 2 = 1/0 (int)   where 1 = match between pet image and 
                     classifer labels and 0 = no match between labels
     """
-    pass
+    def match(label, classified_labels):
+        terms = classified_labels.strip().lower().split(',')
+        for term in terms:
+            if (term.strip() == label) or len(term.split(label)) > 1:
+                return 1
+        return 0
+
+    results_dic = {}
+    for f, label in petlabel_dic.items():
+        label = label.strip()
+        classifier_res = classifier(f, model)
+        results_dic[f] = [label, classifier_res, match(label, classifier_res)]
+
+    return results_dic
 
 
 def adjust_results4_isadog():
